@@ -4142,7 +4142,9 @@ int tuxtxt_toptext_getnext(int startpage, int up, int findgroup)
 
 void tuxtxt_FillBorder(tstRenderInfo* renderinfo, int color)
 {
-	int ys =  renderinfo->var_screeninfo.yres-renderinfo->var_screeninfo.yoffset;
+	int ys =0;
+	if(!renderinfo->var_screeninfo.yoffset)
+		ys = 720;
 	tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0     , ys                     ,renderinfo->StartX      ,renderinfo->var_screeninfo.yres                       ,color);
 	tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,renderinfo->StartX, ys                     ,renderinfo->displaywidth,renderinfo->StartY                                    ,color);
 	tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,renderinfo->StartX, ys+renderinfo->StartY+25*renderinfo->fontheight,renderinfo->displaywidth,renderinfo->var_screeninfo.yres-(renderinfo->StartY+25*renderinfo->fontheight),color);
@@ -4184,12 +4186,18 @@ void tuxtxt_setfontwidth(tstRenderInfo* renderinfo,int newwidth)
 }
 void tuxtxt_ClearBB(tstRenderInfo* renderinfo,int color)
 {
-	tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0, renderinfo->var_screeninfo.yres - renderinfo->var_screeninfo.yoffset, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
+	if(renderinfo->var_screeninfo.yoffset)
+		tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0, renderinfo->var_screeninfo.yres - renderinfo->var_screeninfo.yoffset, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
+	else
+		tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0,720, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
 }
 
 void tuxtxt_ClearFB(tstRenderInfo* renderinfo,int color)
 {
-	tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0, renderinfo->var_screeninfo.yoffset, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
+	if(renderinfo->var_screeninfo.yoffset)
+		tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0, 720, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
+	else
+		tuxtxt_FillRect(renderinfo->lfb,renderinfo->fix_screeninfo.line_length,0, renderinfo->var_screeninfo.yoffset, renderinfo->fix_screeninfo.line_length, renderinfo->var_screeninfo.yres, color);
 }
 
 int  tuxtxt_GetCurFontWidth(tstRenderInfo* renderinfo)
@@ -4432,7 +4440,10 @@ void tuxtxt_RenderCharIntern(tstRenderInfo* renderinfo,int Char, tstPageAttr *At
 
 void tuxtxt_RenderCharFB(tstRenderInfo* renderinfo, int Char, tstPageAttr *Attribute)
 {
-	tuxtxt_RenderCharIntern(renderinfo,Char, Attribute, renderinfo->zoommode, renderinfo->var_screeninfo.yoffset);
+	if(renderinfo->var_screeninfo.yoffset)
+		tuxtxt_RenderCharIntern(renderinfo,Char, Attribute, renderinfo->zoommode, 720);
+	else
+		tuxtxt_RenderCharIntern(renderinfo,Char, Attribute, renderinfo->zoommode, renderinfo->var_screeninfo.yoffset);
 }
 
 /******************************************************************************
@@ -4441,7 +4452,11 @@ void tuxtxt_RenderCharFB(tstRenderInfo* renderinfo, int Char, tstPageAttr *Attri
 
 void tuxtxt_RenderCharBB(tstRenderInfo* renderinfo, int Char, tstPageAttr *Attribute)
 {
-	tuxtxt_RenderCharIntern(renderinfo, Char, Attribute, 0, renderinfo->var_screeninfo.yres-renderinfo->var_screeninfo.yoffset);
+	if(renderinfo->var_screeninfo.yoffset)
+		tuxtxt_RenderCharIntern(renderinfo, Char, Attribute, 0, renderinfo->var_screeninfo.yres-renderinfo->var_screeninfo.yoffset);
+	else
+		tuxtxt_RenderCharIntern(renderinfo, Char, Attribute, 0, 720);
+	//tuxtxt_RenderCharIntern(renderinfo, Char, Attribute, 0, renderinfo->var_screeninfo.yres-renderinfo->var_screeninfo.yoffset);
 }
 
 void tuxtxt_RenderClearMenuLineBB(tstRenderInfo* renderinfo,char *p, tstPageAttr *attrcol, tstPageAttr *attr)
@@ -4598,7 +4613,7 @@ void tuxtxt_showlink(tstRenderInfo* renderinfo, int column, int linkpage)
 	if (renderinfo->var_screeninfo.yoffset)
 		yoffset = 0;
 	else
-		yoffset = renderinfo->var_screeninfo.yres;
+		yoffset = 720;
 	int abx = ((renderinfo->displaywidth)%(40-renderinfo->nofirst) == 0 ? renderinfo->displaywidth+1 : (renderinfo->displaywidth)/(((renderinfo->displaywidth)%(40-renderinfo->nofirst)))+1);// distance between 'inserted' pixels
 	int width = renderinfo->displaywidth /4;
 
@@ -4852,11 +4867,11 @@ void tuxtxt_CopyBB2FB(tstRenderInfo* renderinfo)
 
 
 	if (renderinfo->var_screeninfo.yoffset)
-		dst += renderinfo->fix_screeninfo.line_length * renderinfo->var_screeninfo.yres;
+		dst += renderinfo->fix_screeninfo.line_length * 720;
 	else
 	{
-		src += renderinfo->fix_screeninfo.line_length * renderinfo->var_screeninfo.yres;
-		topsrc += renderinfo->fix_screeninfo.line_length * renderinfo->var_screeninfo.yres;
+		src += renderinfo->fix_screeninfo.line_length *720;
+		topsrc += renderinfo->fix_screeninfo.line_length * 720;
 	}
 	if (!renderinfo->pagecatching )
 		memcpy(dst+(24*renderinfo->fontheight)*renderinfo->fix_screeninfo.line_length, src + (24*renderinfo->fontheight)*renderinfo->fix_screeninfo.line_length, renderinfo->fix_screeninfo.line_length*renderinfo->fontheight); /* copy line25 in normal height */
@@ -5151,6 +5166,9 @@ void tuxtxt_DoRender(tstRenderInfo* renderinfo, int startrow, int national_subse
 #if TUXTXT_DEBUG
 			printf("TuxTxt <decoding *DRCS %03x/%02x %d>\n", tuxtxt_cache.page, tuxtxt_cache.subpage, renderinfo->pageinfo->function);
 #endif
+			int py = 0;
+			if(!renderinfo->var_screeninfo.yoffset)
+				py = 720;
 			tuxtxt_ClearBB(renderinfo,tuxtxt_color_black);
 			for (col = 0; col < 24*40; col++)
 				renderinfo->page_atrb[col] = tuxtxt_atrtable[ATR_WB];
@@ -5159,9 +5177,7 @@ void tuxtxt_DoRender(tstRenderInfo* renderinfo, int startrow, int national_subse
 				for (col = 0; col < DRCSCOLS; col++)
 					tuxtxt_RenderDRCS(renderinfo->fix_screeninfo.line_length,
 						renderinfo->page_char + 20 * (DRCSCOLS * row + col + 2),
-						renderinfo->lfb
-						+ (renderinfo->StartY + renderinfo->fontheight + DRCSYSPC * row + renderinfo->var_screeninfo.yres - renderinfo->var_screeninfo.yoffset) * renderinfo->fix_screeninfo.line_length
-					                  + (renderinfo->StartX + DRCSXSPC * col)*4,
+						renderinfo->lfb + (renderinfo->StartY + renderinfo->fontheight + DRCSYSPC * row + py) * renderinfo->fix_screeninfo.line_length + (renderinfo->StartX + DRCSXSPC * col)*4,
 						ax, tuxtxt_color_white, tuxtxt_color_black);
 
 			memset(renderinfo->page_char + 40, 0xff, 24*40); /* don't render any char below row 0 */
